@@ -18,7 +18,7 @@ using namespace std;
  * *** STUDENTS WILL NEED TO CHANGE INPUT_CSV_FILE PATH BELOW TO POINT TO THE rpn-input.csv FILE ***
  * *** ON THEIR LAPTOP/COMPUTER ***
  */
-#define INPUT_CSV_FILE "/~/CIS-087-101/rpn-input.csv"
+#define INPUT_CSV_FILE "/home/marcusspracklen/CIS-087-101/rpn-input.csv"
 
 // test controls
 #define MIN_VALUE 0
@@ -49,10 +49,24 @@ uint8_t const width = 16U;
  * Students should create or add any functions or classes they may need.
  */
 shared_ptr<uint16_t> rpn_calc(command const cmd, uint16_t const value = 0) {
-    // this is example code which returns a (smart shared) pointer to 16-bit value
-    uint16_t val = 0b1001100100000011;
-    shared_ptr<uint16_t> result = make_shared<uint16_t>(val);
-    return result;
+    static vector<shared_ptr<uint16_t>> stack;
+
+    switch (cmd) {
+        case cmd_enter: {
+            // Push value onto the stack.
+            stack.push_back(make_shared<uint16_t>(value));
+
+            // Return pointer to top of stack.
+            return stack.back();
+        }
+        case cmd_clear: {
+            // Empty the stack.
+            stack.clear();
+
+            // Empty stack => nullptr.
+            return nullptr;
+        }
+}
 }
 
 /*
