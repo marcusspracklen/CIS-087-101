@@ -59,6 +59,7 @@ shared_ptr<uint16_t> rpn_calc(command const cmd, uint16_t const value = 0) {
             // Return pointer to top of stack.
             return stack.back();
         }
+        
         case cmd_clear: {
             // Empty the stack.
             stack.clear();
@@ -66,7 +67,63 @@ shared_ptr<uint16_t> rpn_calc(command const cmd, uint16_t const value = 0) {
             // Empty stack => nullptr.
             return nullptr;
         }
-}
+
+        case cmd_pop: {
+            // Nothing to pop.
+            if (stack.empty()) {
+                return nullptr;
+            }
+
+            // Remove the top value.
+            stack.pop_back();
+
+            // Return new top, or nullptr if now empty.
+            if (stack.empty()) {
+                return nullptr;
+            }
+
+            return stack.back();
+        }
+
+        case cmd_top: {
+            // Nothing on stack.
+            if (stack.empty()) {
+                return nullptr;
+            }
+
+            // Do not modify the stack.
+            return stack.back();
+        }
+
+        case cmd_left_shift: {
+            // Need at least two values.
+            if (stack.size() < 2) {
+                return nullptr;
+            }
+
+            // a = top, b = next below top
+            uint16_t a = *stack.back();
+            uint16_t b = *stack[stack.size() - 2];
+
+            uint16_t result;
+
+            // Avoid undefined behavior for shifts >= 16.
+            if (a >= 16) {
+                result = 0;
+            } else {
+                result = static_cast<uint16_t>(b << a);
+            }
+
+            // Remove a and b.
+            stack.pop_back();
+            stack.pop_back();
+
+            // Push result.
+            stack.push_back(make_shared<uint16_t>(result));
+
+            return stack.back();
+        }
+    }
 }
 
 /*
