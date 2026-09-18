@@ -193,36 +193,33 @@ shared_ptr<uint16_t> rpn_calc(command const cmd, uint16_t const value = 0) {
                 return nullptr;
             }
 
-            // a = top, b = next below top
             uint16_t a = *stack.back();
             uint16_t b = *stack[stack.size() - 2];
-            uint16_t sum = static_cast<uint16_t>(a ^ b);
-            uint16_t carry = static_cast<uint16_t>((a & b) << 1);
 
+            uint16_t sum = a;
+            uint16_t carry = b;
             bool overflow = false;
 
             while (carry != 0) {
-                if ((carry & 0x8000U) != 0) {
+                uint16_t carry_bits = static_cast<uint16_t>(sum & carry);
+
+                if ((carry_bits & 0x8000U) != 0) {
                     overflow = true;
                     break;
                 }
 
-                uint16_t new_sum =
-                    static_cast<uint16_t>(sum ^ carry);
-
-                carry = static_cast<uint16_t>((sum & carry) << 1);
-                sum = new_sum;
+                uint16_t next_sum = static_cast<uint16_t>(sum ^ carry);
+                carry = static_cast<uint16_t>(carry_bits << 1);
+                sum = next_sum;
             }
 
             if (overflow) {
                 return nullptr;
             }
 
-            // Addition succeeded, so now remove the operands.
             stack.pop_back();
             stack.pop_back();
 
-            // Push the 16-bit result.
             stack.push_back(make_shared<uint16_t>(sum));
 
             return stack.back();
