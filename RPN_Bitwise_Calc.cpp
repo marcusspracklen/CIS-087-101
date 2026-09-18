@@ -123,6 +123,113 @@ shared_ptr<uint16_t> rpn_calc(command const cmd, uint16_t const value = 0) {
 
             return stack.back();
         }
+        case cmd_right_shift: {
+            // Need at least two values.
+            if (stack.size() < 2) {
+                return nullptr;
+            }
+
+            // a = top, b = next below top
+            uint16_t a = *stack.back();
+            uint16_t b = *stack[stack.size() - 2];
+
+            uint16_t result;
+
+            // Avoid undefined behavior for shifts >= 16.
+            if (a >= 16) {
+                result = 0;
+            } else {
+                result = static_cast<uint16_t>(b >> a);
+            }
+
+            // Remove a and b.
+            stack.pop_back();
+            stack.pop_back();
+
+            // Push result.
+            stack.push_back(make_shared<uint16_t>(result));
+
+            return stack.back();
+        }
+
+        case cmd_or: {
+            if (stack.size() < 2) {
+                return nullptr;
+            }
+
+            uint16_t a = *stack.back();
+            uint16_t b = *stack[stack.size() - 2];
+
+            uint16_t result = static_cast<uint16_t>(a | b);
+
+            stack.pop_back();
+            stack.pop_back();
+
+            stack.push_back(make_shared<uint16_t>(result));
+
+            return stack.back();
+        }
+
+        case cmd_and: {
+            if (stack.size() < 2) {
+                return nullptr;
+            }
+
+            uint16_t a = *stack.back();
+            uint16_t b = *stack[stack.size() - 2];
+
+            uint16_t result = static_cast<uint16_t>(a & b);
+
+            stack.pop_back();
+            stack.pop_back();
+
+            stack.push_back(make_shared<uint16_t>(result));
+
+            return stack.back();
+        }
+
+        case cmd_add: {
+            if (stack.size() < 2) {
+                return nullptr;
+            }
+
+            // a = top, b = next below top
+            uint16_t a = *stack.back();
+            uint16_t b = *stack[stack.size() - 2];
+            uint16_t sum = static_cast<uint16_t>(a ^ b);
+            uint16_t carry = static_cast<uint16_t>((a & b) << 1);
+
+            bool overflow = false;
+
+            while (carry != 0) {
+                if ((carry & 0x8000U) != 0) {
+                    overflow = true;
+                    break;
+                }
+
+                uint16_t new_sum =
+                    static_cast<uint16_t>(sum ^ carry);
+
+                carry = static_cast<uint16_t>((sum & carry) << 1);
+                sum = new_sum;
+            }
+
+            if (overflow) {
+                return nullptr;
+            }
+
+            // Addition succeeded, so now remove the operands.
+            stack.pop_back();
+            stack.pop_back();
+
+            // Push the 16-bit result.
+            stack.push_back(make_shared<uint16_t>(sum));
+
+            return stack.back();
+        }
+
+        default:
+            return nullptr;
     }
 }
 
