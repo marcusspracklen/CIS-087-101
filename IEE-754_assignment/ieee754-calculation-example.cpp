@@ -64,7 +64,7 @@ float ieee_754(uint32_t const data) {
             magnitude = decode_normal(exponent, mantissa);
             break;
     }
-    return is_negative ? magnitude : magnitude;
+    return is_negative ? -magnitude : magnitude;
 }
 
 /*
