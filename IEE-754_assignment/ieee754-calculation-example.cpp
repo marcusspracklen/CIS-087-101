@@ -46,10 +46,6 @@ float decode_subnormal(uint32_t const mantissa) {
 float decode_special(uint32_t const mantissa) {
     return (mantissa == empty_mantissa) ? numeric_limits<float>::infinity() : numeric_limits<float>::quiet_NaN();
 }
-
-float decode_special(uint32_t const mantissa) {
-    return (mantissa == empty_mantissa) ? numeric_limits<float>::infinity() : numeric_limits<float>::quiet_NaN();
-}
  
 float ieee_754(uint32_t const data) {
     bool const is_negative = (data & sign_mask) != 0U;
@@ -68,7 +64,7 @@ float ieee_754(uint32_t const data) {
             magnitude = decode_normal(exponent, mantissa);
             break;
     }
-    return is_negative ? -magnitude : magnitude;
+    return is_negative ? magnitude : magnitude;
 }
 
 /*
