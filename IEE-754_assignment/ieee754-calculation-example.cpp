@@ -25,6 +25,28 @@ uint8_t const bias = 127U;
  * Students should create or add any data structures needed.
  * Students should create or add any functions or classes they may need.
  */
+constexpr uint32_t sign_mask = 1U << (width - 1U);
+constexpr uint32_t exp_mask = (1U << exp_width) - 1U;
+constexpr uint32_t mantissa_mask = (1U << mantissa_width) - 1U;
+constexpr uint32_t implicit_leading_one = 1U << mantissa_width;
+constexpr uint32_t exp_all_zeros = 0U;
+constexpr uint32_t exp_all_ones = exp_mask;
+constexpr uint32_t empty_mantissa = 0U;
+constexpr int subnormal_exponent = 1 - static_cast<int>(bias);
+ 
+// Mantissa is treated as an integer, so the scale factor also shifts by mantissa_width.
+float decode_subnormal(uint32_t const mantissa) {
+    return ldexp(static_cast<float>(mantissa), subnormal_exponent - mantissa_width);
+}
+ float decode_normal(uint32_t const exponent, uint32_t const mantissa) {
+    int const unbiased_exponent = static_cast<int>(exponent) - bias;
+    return ldexp(static_cast<float>(mantissa | implicit_leading_one), unbiased_exponent - mantissa_width);
+}
+ 
+float decode_special(uint32_t const mantissa) {
+    return (mantissa == empty_mantissa) ? numeric_limits<float>::infinity() : numeric_limits<float>::quiet_NaN();
+}
+
 float ieee_754(uint32_t const data) {
     float value;
     // This will fail the tests. Students should do the proper IEEE-754 calculation per assignment
