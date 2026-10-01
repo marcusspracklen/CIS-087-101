@@ -47,12 +47,28 @@ float decode_special(uint32_t const mantissa) {
     return (mantissa == empty_mantissa) ? numeric_limits<float>::infinity() : numeric_limits<float>::quiet_NaN();
 }
 
+float decode_special(uint32_t const mantissa) {
+    return (mantissa == empty_mantissa) ? numeric_limits<float>::infinity() : numeric_limits<float>::quiet_NaN();
+}
+ 
 float ieee_754(uint32_t const data) {
-    float value;
-    // This will fail the tests. Students should do the proper IEEE-754 calculation per assignment
-    // using the 32 bit 'data' value passed into this function.
-    value = 1.23;
-    return value;
+    bool const is_negative = (data & sign_mask) != 0U;
+    uint32_t const exponent = (data >> mantissa_width) & exp_mask;
+    uint32_t const mantissa = data & mantissa_mask;
+ 
+    float magnitude;
+    switch (exponent) {
+        case exp_all_zeros:
+            magnitude = decode_subnormal(mantissa);
+            break;
+        case exp_all_ones:
+            magnitude = decode_special(mantissa);
+            break;
+        default:
+            magnitude = decode_normal(exponent, mantissa);
+            break;
+    }
+    return is_negative ? -magnitude : magnitude;
 }
 
 /*
