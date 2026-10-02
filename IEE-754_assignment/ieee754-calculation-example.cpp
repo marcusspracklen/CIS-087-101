@@ -25,22 +25,54 @@ uint8_t const bias = 127U;
  * Students should create or add any data structures needed.
  * Students should create or add any functions or classes they may need.
  */
-constexpr uint32_t sign_mask = 1U << (width - 1U);
-constexpr uint32_t exp_mask = (1U << exp_width) - 1U;
-constexpr uint32_t mantissa_mask = (1U << mantissa_width) - 1U;
-constexpr uint32_t implicit_leading_one = 1U << mantissa_width;
+constexpr uint32_t lsb_mask = 1U;
+constexpr uint32_t sign_mask = lsb_mask << (width - 1U);
+constexpr uint32_t exp_mask = (lsb_mask << exp_width) - 1U;
+constexpr uint32_t mantissa_mask = (lsb_mask << mantissa_width) - 1U;
 constexpr uint32_t exp_all_zeros = 0U;
 constexpr uint32_t exp_all_ones = exp_mask;
 constexpr uint32_t empty_mantissa = 0U;
-constexpr int subnormal_exponent = 1 - static_cast<int>(bias);
+constexpr int32_t subnormal_exponent = 1 - bias;
  
-// Mantissa is treated as an integer, so the scale factor also shifts by mantissa_width.
-float decode_subnormal(uint32_t const mantissa) {
-    return ldexp(static_cast<float>(mantissa), subnormal_exponent - mantissa_width);
+constexpr float float_zero = 0.0f;
+constexpr float float_one = 1.0f;
+constexpr float float_two = 2.0f;
+constexpr float float_half = 0.5f;
+ 
+// Walks the mantissa from its least significant bit, halving each step, so the result is 0.mantissa.
+float mantissa_fraction(uint32_t mantissa) {
+    float fraction = float_zero;
+    for (uint8_t bit = 0U; bit < mantissa_width; ++bit) {
+        if (mantissa & lsb_mask) {
+            fraction += float_one;
+        }
+        fraction *= float_half;
+        mantissa >>= 1U;
+    }
+    return fraction;
 }
- float decode_normal(uint32_t const exponent, uint32_t const mantissa) {
-    int const unbiased_exponent = static_cast<int>(exponent) - bias;
-    return ldexp(static_cast<float>(mantissa | implicit_leading_one), unbiased_exponent - mantissa_width);
+ 
+// Exponentiation by squaring: O(log n) multiplies; every step is an exact power of two.
+float power_of_two(int32_t const power) {
+    float base = (power < 0) ? float_half : float_two;
+    uint32_t remaining = (power < 0) ? -power : power;
+    float result = float_one;
+    while (remaining) {
+        if (remaining & lsb_mask) {
+            result *= base;
+        }
+        base *= base;
+        remaining >>= 1U;
+    }
+    return result;
+}
+ 
+float decode_subnormal(uint32_t const mantissa) {
+    return mantissa_fraction(mantissa) * power_of_two(subnormal_exponent);
+}
+ 
+float decode_normal(int32_t const exponent, uint32_t const mantissa) {
+    return (float_one + mantissa_fraction(mantissa)) * power_of_two(exponent - bias);
 }
  
 float decode_special(uint32_t const mantissa) {
