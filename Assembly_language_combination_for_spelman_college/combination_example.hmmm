@@ -1,0 +1,25 @@
+################################################################################
+# Combinations C(n,k) solution
+# STUDENT NAME GOES HERE
+################################################################################
+
+################################################################################
+# register usage
+# STUDENTS MUST EXPLAIN ALL REGISTERS THEY USE AND FOR WHAT PURPOSE HERE
+################################################################################
+# r0 <- 0
+# r1 <- n
+
+# HMMMM pre-defined registers
+# r13 Function return value
+# r14 Function return address
+# r15 Stack pointer
+
+# STUIDENTS NEED TO ADD THEIR OWN ASSEMBLY CODE HERE
+
+################################################################################
+# read n, print n, and stop
+################################################################################
+0 read  r1 # read n
+1 write r1 # print n
+2 halt     # stop the program
