@@ -1,0 +1,101 @@
+################################################################################
+# Combinations C(n,k) solution
+# Marcus Spracklen
+################################################################################
+
+################################################################################
+# register usage
+# STUDENTS MUST EXPLAIN ALL REGISTERS THEY USE AND FOR WHAT PURPOSE HERE
+################################################################################
+# r0 <- 0
+# r1 <- n
+# r1 <- x, the argument passed to factorial(x)
+# r2 <- k
+# r3 <- n - k
+# r4 <- n!
+# r5 <- k!
+# r6 <- k! * (n-k)!, then the result C(n,k), or -1 for invalid input
+
+# HMMMM pre-defined registers
+# r13 Function return value
+# r14 Function return address
+# r15 Stack pointer
+
+# STUIDENTS NEED TO ADD THEIR OWN ASSEMBLY CODE HERE
+
+################################################################################
+# get user input
+################################################################################
+0  read  r1           # read n
+1  read  r2           # read k
+
+################################################################################
+# validate user input: n > 0, k > 0 and k <= n
+# invalid input jumps to the error handler at line 32
+################################################################################
+2  jltzn r1 32        # n < 0: invalid input
+3  jeqzn r1 32        # n == 0: invalid input
+4  jltzn r2 32        # k < 0: invalid input
+5  jeqzn r2 32        # k == 0: invalid input
+6  sub   r3 r1 r2     # r3 = n - k
+7  jltzn r3 32        # k > n: invalid input
+
+################################################################################
+# prepare to call factorial(x) and return from it for n!, k! and (n-k)!
+# before each call: push the registers still needed and put x in r1
+# after each call: pop them in reverse order and take x! from r13
+################################################################################
+# the code uses lines 0-40, so the stack starts at address 41
+8  setn  r15 41       # r15 = 41, first free address after the code
+
+# call factorial(n)
+9  pushr r2 r15       # save k on the stack
+10 pushr r3 r15       # save n - k on the stack
+11 calln r14 35       # r13 = factorial(n), x = n is already in r1
+12 popr  r3 r15       # restore n - k
+13 popr  r2 r15       # restore k
+14 copy  r4 r13       # r4 = n!
+
+# call factorial(k)
+15 pushr r3 r15       # save n - k on the stack
+16 pushr r4 r15       # save n! on the stack
+17 copy  r1 r2        # x = k
+18 calln r14 35       # r13 = factorial(k)
+19 popr  r4 r15       # restore n!
+20 popr  r3 r15       # restore n - k
+21 copy  r5 r13       # r5 = k!
+
+# call factorial(n-k)
+22 pushr r4 r15       # save n! on the stack
+23 pushr r5 r15       # save k! on the stack
+24 copy  r1 r3        # x = n - k
+25 calln r14 35       # r13 = factorial(n - k)
+26 popr  r5 r15       # restore k!
+27 popr  r4 r15       # restore n!
+
+################################################################################
+# final calculation: C(n,k) = n! / (k! * (n-k)!)
+################################################################################
+28 mul   r6 r5 r13    # r6 = k! * (n-k)!
+29 div   r6 r4 r6     # r6 = n! / (k! * (n-k)!)
+30 write r6           # print C(n,k)
+31 halt               # stop the program
+
+################################################################################
+# handle user input errors: print -1 and stop
+################################################################################
+32 setn  r6 -1        # r6 = -1 for invalid input
+33 write r6           # print -1
+34 halt               # stop the program
+
+################################################################################
+# function factorial(x)
+# input: x in r1, output: x! in r13, returns to the address in r14
+# for x = 0 the loop is skipped, so 0! = 1
+################################################################################
+35 setn  r13 1        # result = 1
+36 jumpn 39           # jump to the loop test
+37 mul   r13 r13 r1   # result = result * x
+38 addn  r1 -1        # x = x - 1
+39 jgtzn r1 37        # repeat while x > 0
+40 jumpr r14          # return to the caller with x! in r13
