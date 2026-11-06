@@ -4,24 +4,23 @@
 ################################################################################
 
 ################################################################################
-# register usage
-# STUDENTS MUST EXPLAIN ALL REGISTERS THEY USE AND FOR WHAT PURPOSE HERE
+# Register usage
+#
+# r0  - unused; remove this line unless r0 is required by the ISA
+# r1  - initially n; later used as the argument x for factorial(x).
+#       factorial(x) destroys this value, so n is not assumed to remain in r1.
+# r2  - k; saved/restored around factorial calls for clarity
+# r3  - n - k; saved/restored around factorial calls for clarity
+# r4  - n!; saved/restored while computing k!
+# r5  - k!; saved/restored while computing (n-k)!
+# r6  - temporary denominator k! * (n-k)!, then final C(n,k);
+#       set to -1 for invalid input
+#
+# r13 - factorial return value / function result
+# r14 - function return address used by calln/jumpr
+# r15 - stack pointer; initialized to 41, the first free address after code
+#       ASSUMES pushr stores at [r15] then increments r15
 ################################################################################
-# r0 <- 0
-# r1 <- n
-# r1 <- x, the argument passed to factorial(x)
-# r2 <- k
-# r3 <- n - k
-# r4 <- n!
-# r5 <- k!
-# r6 <- k! * (n-k)!, then the result C(n,k), or -1 for invalid input
-
-# HMMMM pre-defined registers
-# r13 Function return value
-# r14 Function return address
-# r15 Stack pointer
-
-# STUIDENTS NEED TO ADD THEIR OWN ASSEMBLY CODE HERE
 
 ################################################################################
 # get user input
@@ -38,20 +37,24 @@
 4  jltzn r2 32        # k < 0: invalid input
 5  jeqzn r2 32        # k == 0: invalid input
 6  sub   r3 r1 r2     # r3 = n - k
-7  jltzn r3 32        # k > n: invalid input
+7  jltzn r3 32        # n - k < 0, i.e. k > n: invalid input
 
 ################################################################################
 # prepare to call factorial(x) and return from it for n!, k! and (n-k)!
 # before each call: push the registers still needed and put x in r1
 # after each call: pop them in reverse order and take x! from r13
+#
+# factorial only changes r1 and r13, so the pushes/pops below are defensive
+# caller-state preservation rather than strictly required by factorial.
 ################################################################################
 # the code uses lines 0-40, so the stack starts at address 41
-8  setn  r15 41       # r15 = 41, first free address after the code
+# this assumes pushr stores at [r15] and then increments r15
+8  setn  r15 41       # r15 = first free address after code
 
 # call factorial(n)
 9  pushr r2 r15       # save k on the stack
 10 pushr r3 r15       # save n - k on the stack
-11 calln r14 35       # r13 = factorial(n), x = n is already in r1
+11 calln r14 35       # r13 = factorial(n); r1 already contains n
 12 popr  r3 r15       # restore n - k
 13 popr  r2 r15       # restore k
 14 copy  r4 r13       # r4 = n!
